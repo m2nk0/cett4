@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Paella Valenciana</title>
+<style>
+  :root { --tile:#123a63; --tile2:#0a2340; --paper:#fffaf0; --ink:#1c2a3a; --muted:#5d6b7a; --saffron:#f2b632; --saffron-d:#c98a0a; --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; min-height:100%; background:radial-gradient(circle at 50% 0%,var(--tile),var(--tile2)); color:var(--ink); font-family:var(--font); }
+  body { display:flex; align-items:center; justify-content:center; padding:16px; min-height:100vh; }
+  #game { width:100%; max-width:440px; background:var(--paper); border-radius:22px; padding:18px; text-align:center; box-shadow:0 12px 36px rgba(0,0,0,.35); }
+  #top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  h1 { flex:1; margin:0; font-size:19px; font-weight:800; }
+  .langs { display:flex; gap:4px; width:84px; }
+  .lang-btn { background:#fff; color:var(--ink); border:1px solid #d6cdb8; border-radius:8px; padding:5px 7px; font-size:12px; font-weight:700; cursor:pointer; }
+  .lang-btn.active { background:var(--saffron); border-color:var(--saffron-d); }
+  #stageLabel { font-size:15px; font-weight:800; color:var(--saffron-d); margin-bottom:6px; }
+  .hint { font-size:14px; color:var(--muted); line-height:1.5; margin:0 0 12px; }
+  #count { font-size:14px; font-weight:700; margin-bottom:10px; }
+  #grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .item { background:#fff; border:2px solid #e3d9c2; border-radius:14px; padding:10px 4px; cursor:pointer; touch-action:manipulation; font-family:var(--font); color:var(--ink); }
+  .item span { display:block; }
+  .item .e { font-size:28px; margin-bottom:3px; }
+  .item .n { font-size:12.5px; font-weight:700; line-height:1.3; }
+  .item.ok { border-color:#3f9a58; background:#e8f6ec; pointer-events:none; }
+  .item.bad { border-color:#d64545; background:#fdeaea; animation:shake .35s; }
+  @keyframes shake { 25% { transform:translateX(-5px); } 75% { transform:translateX(5px); } }
+  .msg { min-height:42px; margin-top:12px; font-size:14px; font-weight:700; line-height:1.5; }
+  #pan { width:min(52vw,190px); aspect-ratio:1; border-radius:50%; margin:6px auto 16px; box-shadow:0 6px 14px rgba(0,0,0,.3); }
+  #bar { position:relative; height:26px; border-radius:13px; margin:0 6px 16px; background:linear-gradient(90deg,#d9cfa6 0 55%,#f2b632 55% 79%,#3a2a20 79% 100%); }
+  #marker { position:absolute; top:-5px; left:0; width:6px; height:36px; margin-left:-3px; background:var(--ink); border-radius:3px; }
+  .btn { background:var(--saffron); color:#2a1d00; border:none; border-radius:14px; padding:14px 30px; font-size:16px; font-weight:800; cursor:pointer; touch-action:manipulation; font-family:var(--font); }
+  .btn.ghost { background:transparent; color:#cfe0f2; border:1px solid rgba(255,255,255,.4); font-size:14px; padding:10px 20px; margin-top:8px; }
+  #overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 10%,var(--tile),var(--tile2)); padding:22px; overflow-y:auto; z-index:10; }
+  #overlay.show { display:flex; }
+  .panel { width:100%; max-width:380px; color:#fff; text-align:center; }
+  .panel h2 { font-size:25px; margin:0 0 10px; }
+  .pitch { color:#cfe0f2; font-size:15px; line-height:1.65; margin:0 0 22px; }
+  .row { display:flex; justify-content:center; gap:8px; margin-bottom:22px; }
+  .row .lang-btn { padding:9px 15px; font-size:14px; }
+  .card { background:rgba(255,255,255,.09); border-radius:12px; padding:12px 14px; margin-bottom:9px; font-size:14px; line-height:1.6; color:#eef5fc; }
+  .stats { font-size:13px; color:#cfe0f2; margin:12px 0 14px; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="top"><div class="langs"><button class="lang-btn" data-lang="en">EN</button><button class="lang-btn" data-lang="ko">KO</button><button class="lang-btn" data-lang="es">ES</button></div><h1 id="title"></h1><div style="width:84px"></div></div>
+  <div id="stageLabel"></div>
+  <div id="s1">
+    <p class="hint" id="h1"></p><div id="count"></div><div id="grid"></div><div class="msg" id="m1"></div>
+  </div>
+  <div id="s2" style="display:none">
+    <p class="hint" id="h2"></p><div id="pan"></div><div id="bar"><div id="marker"></div></div>
+    <button class="btn" id="goBtn"></button><div class="msg" id="m2"></div>
+  </div>
+</div>
+
+<div id="overlay">
+  <div class="panel" id="openP">
+    <h2 id="oTitle"></h2><p class="pitch" id="oPitch"></p>
+    <div class="row"><button class="lang-btn" data-lang="en">English</button><button class="lang-btn" data-lang="ko">한국어</button><button class="lang-btn" data-lang="es">Español</button></div>
+    <button class="btn" id="startBtn"></button>
+  </div>
+  <div class="panel" id="endP" style="display:none">
+    <h2 id="eTitle"></h2><div id="eCards"></div><div class="stats" id="stats"></div>
+    <button class="btn" id="againBtn"></button>
+  </div>
+</div>
+
+<script>
+const L = {
+  en: { title:"Paella Valenciana", pitch:"Choose the real ingredients, nail the golden crust, and find out why Valencia's rice dish is so famous.", start:"Start",
+    s1:"Stage 1 · The real recipe", h1:"Tap the ingredients that belong in an authentic Valencian paella.", found:(a,b)=>`Found ${a} / ${b}`,
+    s2:"Stage 2 · The socarrat", h2:"Never stir! Wait for the rice to turn golden, then stop in the golden zone before it burns.", go:"Start cooking", stop:"Stop!", retry:"Try again", next:"Continue",
+    soft:"Too early — the rice is still soft.", burnt:"Burnt! Stop a little sooner.", perfect:"Perfect socarrat — crunchy and golden!",
+    eT:"Why is it so famous?", end:["Born by the Albufera lagoon: Paella Valenciana began in the fields near Valencia, where farm workers cooked rice over open fires with beans, rabbit and chicken.","Valencia is rice country: the Albufera has grown rice since Moorish times, and its short-grain rice (Bomba, Senia, Albufera) soaks up flavour while staying firm.","The socarrat and the shared pan: the crunchy toasted crust at the bottom, and eating together straight from the pan, are part of what makes paella a symbol of Valencian food."],
+    stats:(m,a)=>`Wrong picks: ${m} · Cooking tries: ${a}`, again:"Play again",
+    n:{rice:"Short-grain rice",chicken:"Chicken",rabbit:"Rabbit",ferraura:"Flat green beans",garrofo:"Butter beans (garrofó)",tomato:"Tomato",saffron:"Saffron",oil:"Olive oil",chorizo:"Chorizo",shrimp:"Shrimp",mussels:"Mussels",peas:"Peas"},
+    r:{chorizo:"Valencians say: no chorizo in paella!",seafood:"Seafood goes in a different version: paella de marisco.",peas:"Not part of the traditional recipe."} },
+  ko: { title:"발렌시아 파에야", pitch:"진짜 재료를 고르고, 황금빛 누룽지를 완성하며 발렌시아 쌀 요리가 왜 유명한지 알아보세요.", start:"시작하기",
+    s1:"스테이지 1 · 진짜 레시피", h1:"전통 발렌시아 파에야에 들어가는 재료를 눌러 담아보세요.", found:(a,b)=>`찾은 재료 ${a} / ${b}`,
+    s2:"스테이지 2 · 소카랏", h2:"절대 젓지 마세요! 쌀이 노릇해질 때까지 기다렸다가, 타기 전에 황금 구간에서 멈추세요.", go:"요리 시작", stop:"멈춰!", retry:"다시 도전", next:"계속하기",
+    soft:"너무 일러요. 쌀이 아직 말랑해요.", burnt:"탔어요! 조금만 더 일찍 멈춰보세요.", perfect:"완벽한 소카랏! 바삭하고 황금빛이에요!",
+    eT:"왜 이렇게 유명할까요?", end:["알부페라 호수에서 태어났어요. 발렌시아 파에야는 발렌시아 근처 들판에서 농부들이 야외 불에 쌀, 콩, 토끼고기, 닭고기를 함께 끓이며 시작됐어요.","발렌시아는 쌀의 고장이에요. 알부페라에서는 이슬람 지배 시기부터 쌀을 길렀고, 이곳의 단립종 쌀(봄바, 세니아, 알부페라)은 맛을 잘 흡수하면서도 단단함을 유지해요.","소카랏과 함께 먹는 팬이 특별해요. 바닥의 바삭한 누룽지와 팬째 둘러앉아 먹는 문화는 파에야가 발렌시아 음식의 상징이 된 이유 중 하나예요."],
+    stats:(m,a)=>`잘못 고른 재료: ${m} · 요리 시도: ${a}`, again:"다시 하기",
+    n:{rice:"단립종 쌀",chicken:"닭고기",rabbit:"토끼고기",ferraura:"납작한 그린빈",garrofo:"버터빈(가로포)",tomato:"토마토",saffron:"사프란",oil:"올리브유",chorizo:"초리소",shrimp:"새우",mussels:"홍합",peas:"완두콩"},
+    r:{chorizo:"발렌시아 사람들은 파에야에 초리소를 넣지 않아요!",seafood:"해산물은 다른 종류인 해산물 파에야(파에야 데 마리스코)에 들어가요.",peas:"전통 레시피에는 들어가지 않아요."} },
+  es: { title:"Paella Valenciana", pitch:"Elige los ingredientes auténticos, logra la costra dorada y descubre por qué el arroz valenciano es tan famoso.", start:"Comenzar",
+    s1:"Etapa 1 · La receta auténtica", h1:"Toca los ingredientes que lleva una auténtica paella valenciana.", found:(a,b)=>`Encontrados ${a} / ${b}`,
+    s2:"Etapa 2 · El socarrat", h2:"¡No remuevas! Espera a que el arroz se dore y para en la zona dorada antes de que se queme.", go:"Empezar a cocinar", stop:"¡Para!", retry:"Intentar de nuevo", next:"Continuar",
+    soft:"Demasiado pronto: el arroz sigue blando.", burnt:"¡Quemado! Para un poco antes.", perfect:"¡Socarrat perfecto: crujiente y dorado!",
+    eT:"¿Por qué es tan famosa?", end:["Nació junto a la Albufera: la paella valenciana surgió en los campos cercanos a Valencia, donde los trabajadores cocinaban arroz al fuego con judías, conejo y pollo.","Valencia es tierra de arroz: la Albufera lo cultiva desde la época musulmana y su arroz de grano corto (Bomba, Senia, Albufera) absorbe el sabor sin perder firmeza.","El socarrat y la paella compartida: la costra crujiente del fondo y comer juntos directamente de la sartén son parte de lo que hace de la paella un símbolo de la gastronomía valenciana."],
+    stats:(m,a)=>`Errores: ${m} · Intentos de cocción: ${a}`, again:"Jugar de nuevo",
+    n:{rice:"Arroz de grano corto",chicken:"Pollo",rabbit:"Conejo",ferraura:"Judía plana",garrofo:"Garrofón",tomato:"Tomate",saffron:"Azafrán",oil:"Aceite de oliva",chorizo:"Chorizo",shrimp:"Gambas",mussels:"Mejillones",peas:"Guisantes"},
+    r:{chorizo:"¡En Valencia no se pone chorizo en la paella!",seafood:"El marisco va en otra versión: la paella de marisco.",peas:"No forma parte de la receta tradicional."} }
+};
+const ITEMS = [["rice","🍚",1],["chicken","🍗",1],["saffron","🌸",1],["chorizo","🌭",0,"chorizo"],["shrimp","🦐",0,"seafood"],["peas","🟢",0,"peas"]];
+const GOOD = ITEMS.filter(i => i[2]).length;
+const ZL = .55, ZH = .79, DUR = 2000;
+let lang = "en", stage = 1, found = new Set(), mistakes = 0, attempts = 0, order = [], m1 = "", m2 = "", mode = "idle", running = false, p = 0, t0 = 0;
+const $ = id => document.getElementById(id), T = () => L[lang];
+
+function renderGrid(){
+  $("grid").innerHTML = "";
+  order.forEach(it => { const [id,e,ok] = it, b = document.createElement("button");
+    b.className = "item" + (found.has(id) ? " ok" : ""); b.innerHTML = `<span class="e">${e}</span><span class="n">${T().n[id]}</span>`;
+    b.onclick = () => pick(it, b); $("grid").appendChild(b); });
+  $("count").textContent = T().found(found.size, GOOD);
+}
+function pick(it, b){
+  const [id,,ok,why] = it;
+  if (ok){ found.add(id); m1 = ""; renderGrid(); if (found.size === GOOD) setTimeout(() => setStage(2), 900); }
+  else { mistakes++; m1 = why; b.classList.add("bad"); setTimeout(() => b.classList.remove("bad"), 400); }
+  $("m1").textContent = m1 ? T().r[m1] : "";
+}
+function mix(a,b,t){ return a.map((v,i) => Math.round(v + (b[i]-v)*t)); }
+function paint(){
+  let c = p < ZL ? mix([236,205,92],[224,165,38],p/ZL) : p < ZH ? mix([224,165,38],[184,112,36],(p-ZL)/(ZH-ZL)) : mix([184,112,36],[48,30,20],Math.min(1,(p-ZH)/(1-ZH)));
+  $("pan").style.background = `radial-gradient(circle, rgb(${c}) 0 62%, #4a4c52 63% 72%, #2a2b2e 73%)`;
+  $("marker").style.left = (p*100) + "%";
+}
+function loop(ts){ if (!running) return; p = Math.min(1, (ts - t0)/DUR); paint(); if (p >= 1){ stopCook(); return; } requestAnimationFrame(loop); }
+function startCook(){ p = 0; running = true; mode = "run"; m2 = ""; t0 = performance.now(); requestAnimationFrame(loop); labels(); }
+function stopCook(){
+  running = false; attempts++;
+  if (p < ZL){ m2 = "soft"; mode = "fail"; } else if (p > ZH){ m2 = "burnt"; mode = "fail"; } else { m2 = "perfect"; mode = "win"; }
+  labels();
+}
+$("goBtn").onclick = () => { if (mode === "idle" || mode === "fail") startCook(); else if (mode === "run") stopCook(); else showEnd(); };
+function labels(){
+  const t = T(); $("goBtn").textContent = mode === "idle" ? t.go : mode === "run" ? t.stop : mode === "fail" ? t.retry : t.next;
+  $("m2").textContent = m2 ? t[m2] : "";
+}
+function setStage(s){ stage = s; $("s1").style.display = s === 1 ? "block" : "none"; $("s2").style.display = s === 2 ? "block" : "none"; texts(); if (s === 2){ p = 0; mode = "idle"; m2 = ""; paint(); labels(); } }
+function showEnd(){ $("openP").style.display = "none"; $("endP").style.display = "block"; $("overlay").classList.add("show"); texts(); }
+function texts(){
+  const t = T(); document.documentElement.lang = lang;
+  $("title").textContent = t.title; $("oTitle").textContent = t.title; $("oPitch").textContent = t.pitch; $("startBtn").textContent = t.start;
+  $("stageLabel").textContent = stage === 1 ? t.s1 : t.s2; $("h1").textContent = t.h1; $("h2").textContent = t.h2;
+  $("m1").textContent = m1 ? t.r[m1] : ""; renderGrid(); labels();
+  $("eTitle").textContent = t.eT; $("eCards").innerHTML = t.end.map(s => `<div class="card">${s}</div>`).join("");
+  $("stats").textContent = t.stats(mistakes, attempts); $("againBtn").textContent = t.again;
+  document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+}
+function reset(){ found = new Set(); mistakes = 0; attempts = 0; m1 = ""; running = false; order = ITEMS.slice().sort(() => Math.random() - .5); setStage(1); }
+document.querySelectorAll(".lang-btn").forEach(b => b.onclick = () => { lang = b.dataset.lang; texts(); });
+$("startBtn").onclick = () => $("overlay").classList.remove("show");
+$("againBtn").onclick = () => { $("overlay").classList.remove("show"); $("endP").style.display = "none"; $("openP").style.display = "block"; reset(); };
+reset(); $("overlay").classList.add("show");
+</script>
+</body>
+</html>
